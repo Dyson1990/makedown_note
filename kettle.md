@@ -8,15 +8,15 @@
 | ----------------------------------- | ------------------------------------------------------------ |
 | CSV file input                      |                                                              |
 | Data Grid                           |                                                              |
-| De-serialize from file              |                                                              |
+| De-serialize from file              | Cube输入(文件反序列化)(De-serialize from file):从二进制 Kettle Cube 文件中读取数据行。 备注：这个步骤仅仅用来存储短期数据。不同版本之间不保证文件的格式一样。 |
 | Email messages input                |                                                              |
 | ESRI Shapefile Reader               |                                                              |
 | Fixed file input                    |                                                              |
 | Generate random credit card numbers |                                                              |
 | Generate random value               |                                                              |
 | Generate Rows                       | 生成行（Generate Rows ）：这个步骤输出一定数量的行，缺省为空。可选包括一定数量的静态字段。 |
-| Get data from XML                   |                                                              |
-| Get File Names                      |                                                              |
+| Get data from XML                   | XML输入：这个步骤允许你读取存储在 XML 文件中的数据。它也提供一个接口，你可以定义你想读取的文件名、XML 文件的数据重复部分、获取的字段等。你可以指定元素或属性字段。 |
+| Get File Names                      | 获取文件名(Get File Names)：这个步骤可以获取系统的文件名信息。 |
 | Get Files Rows Count                |                                                              |
 | Get repository names                |                                                              |
 | Get SubFolder names                 |                                                              |
@@ -29,7 +29,7 @@
 | LDIF Input                          |                                                              |
 | Load file content in memory         |                                                              |
 | Microsoft Access Input              |                                                              |
-| Microsoft Excel Input               |                                                              |
+| Microsoft Excel Input               | Excel输入：利用这个步骤可以从 Kettle 支持的系统的 Excel文件里面读取数据。 |
 | Mondrian Input                      |                                                              |
 | OLAP Input                          |                                                              |
 | Parquet Input                       |                                                              |
@@ -40,22 +40,16 @@
 | SAS Input                           |                                                              |
 | Table Input                         | 表输入(table Input)：常用来利用连接和SQL，从数据中读取信息，自动生成基本的SQL语句。 |
 | Text file input                     | 文本文件输入(text input)：读取大量不同的文本文件。大多是通过工具生成的CSV文件。 |
-| XBase input                         |                                                              |
+| XBase input                         | XBase输入： 使用这一步可以读取大多数被称为 XBase family派生的 DBF文件。 |
 | XML Input Stream (StAX)             |                                                              |
 | Yaml Input                          |                                                              |
 | HL7 Input                           |                                                              |
 
 
 
-Cube输入(文件反序列化)(De-serialize from file):从二进制 Kettle Cube 文件中读取数据行。 备注：这个步骤仅仅用来存储短期数据。不同版本之间不保证文件的格式一样。
 
-XBase输入： 使用这一步可以读取大多数被称为 XBase family派生的 DBF文件。
 
-Excel输入：利用这个步骤可以从 Kettle 支持的系统的 Excel文件里面读取数据。
 
-XML输入：这个步骤允许你读取存储在 XML 文件中的数据。它也提供一个接口，你可以定义你想读取的文件名、XML 文件的数据重复部分、获取的字段等。你可以指定元素或属性字段。
-
-获取文件名(Get File Names)：这个步骤可以获取系统的文件名信息。
 
 文本文件输出(Text File Output)：
 
