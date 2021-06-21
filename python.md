@@ -6,3 +6,9 @@ python多线程有个全局解释器锁（global interpreter lock），这个锁
 
 - 在UNIX平台上，当某个进程终结之后，该进程需要被其父进程调用wait，否则进程成为僵尸进程(Zombie)。所以，有必要对每个Process对象调用join()方法 (实际上等同于wait)。对于多线程来说，由于只有一个进程，所以不存在此必要性。
 - 多进程应该避免共享资源。在多线程中，我们可以比较容易地共享资源，比如使用全局变量或者传递参数。在多进程情况下，由于每个进程有自己独立的内存空间，以上方法并不合适。此时我们可以通过共享内存和Manager的方法来共享资源。但这样做提高了程序的复杂度，并因为同步的需要而降低了程序的效率
+
+
+
+# 未整理资料
+
+https://www.lanqiao.cn/questions/102676/?utm_source=baidu&utm_medium=cpc&utm_campaign=python&utm_term=keywords
