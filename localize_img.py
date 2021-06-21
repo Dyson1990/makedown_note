@@ -72,6 +72,7 @@ root_dir = os.path.abspath('.')
 
 for file0 in os.listdir(root_dir):
     file_path = os.path.join(root_dir, file0)
+    print('checking:', file_path)
     if not os.path.isfile(file_path):
         continue
     if not os.path.splitext(file0)[-1] == '.md':
@@ -100,7 +101,6 @@ for file0 in os.listdir(root_dir):
     with codecs.open(file_path, 'w', 'utf-8') as fp:
         fp.write(text)
         
-    break
 
 
 
