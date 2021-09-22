@@ -14,3 +14,7 @@ Type=Application
 Categories=GNOME;Application;Development;
 StartupNotify=true
 ```
+
+## 常用命令
+
+端口查询

@@ -1,3 +1,5 @@
+# MySQL函数
+
 ## 序号函数
 
 ### rank()
@@ -30,6 +32,10 @@
 `|  5 | pjf      |    99 |    3 |          4 |          2 |`
 `|  6 | wzm      |    96 |    5 |          5 |          3 |`
 `|  4 | trx      |    90 |    6 |          6 |          4 |`
+
+
+
+# MySQL优化
 
 ## Mysql中的锁
 
@@ -232,7 +238,7 @@ select num from a where exists(select 1 from b where num=a.num)
 
 
 
-## Mysql执行顺序
+## Mysql语句执行顺序
 
 1. from 
 2. on 
@@ -255,11 +261,13 @@ select num from a where exists(select 1 from b where num=a.num)
 
 #### 语句一
 
+```
 select a.Customer 
 
 from orders a 
 
 where a.Customer='Bush' or a.Customer = 'Adams' 
+```
 
 分析一：首先是from语句找到表格，然后根据where得到符合条件的记录，最后select出需要的字段，结果如下：
 
@@ -273,6 +281,7 @@ groupby要和聚合函数一起使用
 
  
 
+```
 select a.Customer,sum(a.OrderPrice) 
 
 from orders a 
@@ -280,6 +289,7 @@ from orders a
 where a.Customer='Bush' or a.Customer = 'Adams' 
 
 group by a.Customer 
+```
 
 分析二：在from，where执行后，执行group by，同时也根据group by的字段，执行sum这个聚合函数。这样的话得到的记录对group by的字段来说是不重复的，结果如下：
 ![img](https://img-blog.csdn.net/20160426204606386?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)
@@ -290,6 +300,7 @@ group by a.Customer
 
  
 
+```
 select a.Customer,sum(a.OrderPrice) 
 
 from orders a 
@@ -299,6 +310,7 @@ where a.Customer='Bush' or a.Customer = 'Adams'
 group by a.Customer 
 
 having sum(a.OrderPrice) > 2000 
+```
 
 分析三：由于where是在group之前执行，那么如何对group by的结果进行筛选，就用到了having，结果如下：
 
@@ -312,6 +324,7 @@ having sum(a.OrderPrice) > 2000
 
  
 
+```
 select distinct sum(a.OrderPrice) 
 
 from orders a 
@@ -321,6 +334,7 @@ where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter'
 group by a.Customer 
 
 having sum(a.OrderPrice) > 1700 
+```
 
 分析四：将得到一条记录（没有distinct，将会是两条同样的记录）：
 
@@ -334,6 +348,7 @@ having sum(a.OrderPrice) > 1700
 
  
 
+```
 select distinct sum(a.OrderPrice) As Order1 
 
 from orders a 
@@ -355,6 +370,7 @@ where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter'
 group by a.Customer 
 
 having sum(a.OrderPrice) > 2000 
+```
 
 分析五：默认去掉重复记录（想保留重复记录使用union all），结果如下：
 
@@ -366,6 +382,7 @@ having sum(a.OrderPrice) > 2000
 
  
 
+```
 select distinct sum(a.OrderPrice) As order1 
 
 from orders a 
@@ -390,6 +407,9 @@ having sum(a.OrderPrice) > 2000
 
 order by order1 
 
+
+```
+
 分析：升序排序，结果如下：
 
  
@@ -400,6 +420,7 @@ order by order1
 
 
 
+```
 select distinct sum(a.OrderPrice) As order1 
 
 from orders a 
@@ -425,6 +446,7 @@ having sum(a.OrderPrice) > 2000
 order by order1 
 
 limit 1 
+```
 
 分析七：取出结果中的前1条记录，结果如下：
 
@@ -436,6 +458,7 @@ limit 1
 
 （上面基本讲完，下面是join 和 on)
 
+`
 select distinct sum(a.OrderPrice) As order1,sum(d.OrderPrice) As order2 
 
 from orders a 
@@ -469,6 +492,7 @@ having sum(a.OrderPrice) > 2000
 order by order1 
 
 limit 1 
+`
 
 分析八：上述语句其实join on就是多连接了一张表，而且是两张一样的表，都是Orders。 执行过程是，在执行from关键字之后根据on指定的条件，把left join指定的表格数据附在from指定的表格后面，然后再执行where字句。
 
@@ -649,4 +673,8 @@ No tables used：Query语句中使用from dual 或不含任何from子句
 ```
 -- explain select now() from dual;
 ```
+
+## ！！分区表
+
+## ！！读写分离
 
