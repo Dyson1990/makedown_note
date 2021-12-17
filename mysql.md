@@ -1,3 +1,13 @@
+# 待分类
+
+## MySQL慢查询该如何优化
+
+1. 检查是否走了索引，如果没有则优化SQL利用索引
+2. 检查所利用的索引，是否是最优索引
+3. 检查所查字段是否都是必须的
+4. 检查表中数据是否过多，是否应该进行分库分表了
+5. 检查数据库实例所在机器的性能配置，是否太低，是否可以适当增加资源
+
 # MySQL函数
 
 ## 序号函数
@@ -14,26 +24,24 @@
 
 顺序排序，不跳过任何一个序号，就是**行号**
 
-`select` 
-    `id,` 
-    `name,` 
-    `rank() over(order by score desc) rank,`
-    `row_number() over(order by score desc) row_number,`
-    `dense_rank() over(order by score desc) dense_rank`
-`from students;`
-
-`--------------------------------- 结果 ------------------------------------`
-`+----+----------+-------+------+------------+------------+`
-`| id | name     | score | rank | row_number | dense_rank |`
-`+----+----------+-------+------+------------+------------+`
-`|  1 | zhangsan |   100 |    1 |          1 |          1 |`
-`|  3 | wangwu   |   100 |    1 |          2 |          1 |`
-`|  2 | lisi     |    99 |    3 |          3 |          2 |`
-`|  5 | pjf      |    99 |    3 |          4 |          2 |`
-`|  6 | wzm      |    96 |    5 |          5 |          3 |`
-`|  4 | trx      |    90 |    6 |          6 |          4 |`
-
-
+> `select` 
+>     `id,` 
+>     `name,` 
+>     `rank() over(order by score desc) rank,`
+>     `row_number() over(order by score desc) row_number,`
+>     `dense_rank() over(order by score desc) dense_rank`
+> `from students;`
+>
+> `--------------------------------- 结果 ------------------------------------`
+> `+----+----------+-------+------+------------+------------+`
+> `| id | name     | score | rank | row_number | dense_rank |`
+> `+----+----------+-------+------+------------+------------+`
+> `|  1 | zhangsan |   100 |    1 |          1 |          1 |`
+> `|  3 | wangwu   |   100 |    1 |          2 |          1 |`
+> `|  2 | lisi     |    99 |    3 |          3 |          2 |`
+> `|  5 | pjf      |    99 |    3 |          4 |          2 |`
+> `|  6 | wzm      |    96 |    5 |          5 |          3 |`
+> `|  4 | trx      |    90 |    6 |          6 |          4 |`
 
 # MySQL优化
 
@@ -54,189 +62,7 @@
 3. 系统配置的优化
 4. 硬件的优化
 
-### SQL语句优化举例
-
-#### 1.where、order by 列上建立索引
-
-对查询进行优化，应尽量避免全表扫描，首先应考虑在 where 及 order by 涉及的列上建立索引。
-
-#### 2.避免在 where 中使用!=或<>操作符
-
-应尽量避免在 where 子句中使用!=或<>操作符，否则将引擎放弃使用索引而进行全表扫描。
-
-#### 3.避免在 where 中进行 null 值判断
-
-应尽量避免在 where 子句中对字段进行 null 值判断，否则将导致引擎放弃使用索引而进行全表扫描，如：
-
-select id from t where num is null
-
-可以在num上设置默认值0，确保表中num列没有null值，然后这样查询：
-
-select id from t where num=0
-
-#### 4.避免在 where 中使用 or
-
-应尽量避免在 where 子句中使用 or 来连接条件，否则将导致引擎放弃使用索引而进行全表扫描，如：
-
-select id from t where num=10 or num=20
-
-可以这样查询：
-
-select id from t where num=10
-
-union all
-
-select id from t where num=20
-
-#### 5.like注意事项
-
-下面的查询也将导致全表扫描：
-
-select id from t where name like '%abc%'
-
-若要提高效率，可以考虑全文检索。
-
-#### 6.慎用in 和 not in
-
-in 和 not in 也要慎用，否则会导致全表扫描，如：
-
-select id from t where num in(1,2,3)
-
-对于连续的数值，能用 between 就不要用 in 了：
-
-select id from t where num between 1 and 3
-
-#### 7.避免在where 中使用参数
-
-如果在 where 子句中使用参数，也会导致全表扫描。因为SQL只有在运行时才会解析局部变量，但优化程序不能将访问计划的选择推迟到运行时；它必须在编译时进行选择。然而，如果在编译时建立访问计划，变量的值还是未知的，因而无法作为索引选择的输入项。如下面语句将进行全表扫描：
-
-select id from t where num=@num
-
-可以改为强制查询使用索引：
-
-select id from t with(index(索引名)) where num=@num
-
-#### 8.避免在 where 中写表达式
-
-应尽量避免在 where 子句中对字段进行表达式操作，这将导致引擎放弃使用索引而进行全表扫描。如：
-
-select id from t where num/2=100
-
-应改为:
-
-select id from t where num=100*2
-
-#### 9.避免在where中对使用函数
-
-应尽量避免在where子句中对字段进行函数操作，这将导致引擎放弃使用索引而进行全表扫描。如：
-
-select id from t where substring(name,1,3)='abc'--name以abc开头的id
-
-select id from t where datediff(day,createdate,'2005-11-30')=0--'2005-11-30'生成的id
-
-应改为:
-
-select id from t where name like 'abc%'
-
-select id from t where createdate>='2005-11-30' and createdate<'2005-12-1'
-
-#### 10.NULL
-
-不要在 where 子句中的“=”左边进行函数、算术运算或其他表达式运算，否则系统将可能无法正确使用索引。
-
-#### 11.复合索引最左匹配原则
-
-在使用索引字段作为条件时，如果该索引是复合索引，那么必须使用到该索引中的第一个字段作为条件时才能保证系统使用该索引，否则该索引将不会被使用，并且应尽可能的让字段顺序与索引顺序相一致。
-
-#### 12.不要写一些没有意义的查询
-
-不要写一些没有意义的查询，如需要生成一个空表结构：
-
-select col1,col2 into #t from t where 1=0
-
-这类代码不会返回任何结果集，但是会消耗系统资源的，应改成这样：
-
-create table #t(...)
-
-#### 13.用 exists 代替 in
-
-很多时候用 exists 代替 in 是一个好的选择：
-
-select num from a where num in(select num from b)
-
-用下面的语句替换：
-
-select num from a where exists(select 1 from b where num=a.num)
-
-#### 14.索引列中不能有大量数据重复
-
-并不是所有索引对查询都有效，SQL是根据表中数据来进行查询优化的，当索引列有大量数据重复时，SQL查询可能不会去利用索引，如一表中有字段sex，male、female几乎各一半，那么即使在sex上建了索引也对查询效率起不了作用。
-
-#### 15.索引降低 insert 、 update 的效率
-
-索引并不是越多越好，索引固然可以提高相应的 select 的效率，但同时也降低了 insert 及 update 的效率，因为 insert 或 update 时有可能会重建索引，所以怎样建索引需要慎重考虑，视具体情况而定。一个表的索引数最好不要超过6个，若太多则应考虑一些不常使用到的列上建的索引是否有必要。
-
-#### 16.避免更新 clustered 索引数据列
-
-应尽可能的避免更新 clustered 索引数据列，因为 clustered 索引数据列的顺序就是表记录的物理存储顺序，一旦该列值改变将导致整个表记录的顺序的调整，会耗费相当大的资源。若应用系统需要频繁更新 clustered 索引数据列，那么需要考虑是否应将该索引建为 clustered 索引。
-
-#### 17.尽量使用数字型字段
-
-尽量使用数字型字段，若只含数值信息的字段尽量不要设计为字符型，这会降低查询和连接的性能，并会增加存储开销。这是因为引擎在处理查询和连接时会逐个比较字符串中每一个字符，而对于数字型而言只需要比较一次就够了。
-
-#### 18.尽可能的使用 varchar/nvarchar 代替 char/nchar 
-
-尽可能的使用 varchar/nvarchar 代替 char/nchar ，因为首先变长字段存储空间小，可以节省存储空间，其次对于查询来说，在一个相对较小的字段内搜索效率显然要高些。
-
-#### 19.用具体的字段列表代替“*”
-
-任何地方都不要使用 select * from t ，用具体的字段列表代替“*”，不要返回用不到的任何字段。
-
-#### 20.使用表变量来代替临时表
-
-尽量使用表变量来代替临时表。如果表变量包含大量数据，请注意索引非常有限（只有主键索引）。
-
-#### 21.避免频繁创建和删除临时表
-
-避免频繁创建和删除临时表，以减少系统表资源的消耗。
-
-#### 22.NULL
-
-临时表并不是不可使用，适当地使用它们可以使某些例程更有效，例如，当需要重复引用大型表或常用表中的某个数据集时。但是，对于一次性事件，最好使用导出表。
-
-#### 23.NULL
-
-在新建**临时表**时，如果一次性插入数据量很大，那么可以使用 select into 代替 create table，避免造成大量 log ，以提高速度；如果数据量不大，为了缓和系统表的资源，应先create table，然后insert。
-
-#### 24.NULL
-
-如果使用到了临时表，在存储过程的最后务必将所有的临时表显式删除，先 truncate table ，然后 drop table ，这样可以避免系统表的较长时间锁定。
-
-#### 25.避免使用游标
-
-尽量避免使用游标，因为游标的效率较差，如果游标操作的数据超过1万行，那么就应该考虑改写。
-
-#### 26.NULL
-
-使用基于游标的方法或临时表方法之前，应先寻找基于集的解决方案来解决问题，基于集的方法通常更有效。
-
-#### 27.NULL
-
-与临时表一样，游标并不是不可使用。对小型数据集使用 FAST_FORWARD 游标通常要优于其他逐行处理方法，尤其是在必须引用几个表才能获得所需的数据时。在结果集中包括“合计”的例程通常要比使用游标执行的速度快。如果开发时间允许，基于游标的方法和基于集的方法都可以尝试一下，看哪一种方法的效果更好。
-
-#### 28.NULL
-
-在所有的存储过程和触发器的开始处设置 SET NOCOUNT ON ，在结束时设置 SET NOCOUNT OFF 。无需在执行存储过程和触发器的每个语句后向客户端发送 DONE_IN_PROC 消息。
-
-#### 29.避免向客户端返回大数据量
-
-尽量避免向客户端返回大数据量，若数据量过大，应该考虑相应需求是否合理。
-
-#### 30.避免大事务操作
-
-尽量避免大事务操作，提高系统并发能力。
-
-
+## ！！最左前缀原则
 
 ## Mysql语句执行顺序
 
@@ -522,18 +348,21 @@ explain select * from emp where name = 'Jefabc';
 expain出来的信息有10列，分别是id、select_type、table、type、possible_keys、key、key_len、ref、rows、Extra
 
 **概要描述：**
-id:选择标识符
-select_type:表示查询的类型。
-table:输出结果集的表
-partitions:匹配的分区
-type:表示表的连接类型
-possible_keys:表示查询时，可能使用的索引
-key:表示实际使用的索引
-key_len:索引字段的长度
-ref:列与索引的比较
-rows:扫描出的行数(估算的行数)
-filtered:按表条件过滤的行百分比
-Extra:执行情况的描述和说明
+
+| explain中的列名 | 解释                       |
+| --------------- | -------------------------- |
+| id              | 表示查询的类型             |
+| select_type     | 表示查询的类型             |
+| table           | 输出结果集的表             |
+| partitions      | 匹配的分区                 |
+| type            | 表示表的连接类型           |
+| possible_keys   | 表示查询时，可能使用的索引 |
+| key             | 表示实际使用的索引         |
+| key_len         | 索引字段的长度             |
+| ref             | 列与索引的比较             |
+| rows            | 扫描出的行数(估算的行数)   |
+| filtered        | 按表条件过滤的行百分比     |
+| Extra           | 执行情况的描述和说明       |
 
 **下面对这些字段出现的可能进行解释：**
 
@@ -543,11 +372,11 @@ SELECT识别符。这是SELECT的查询序列号
 
  **我的理解是SQL执行的顺序的标识，SQL从大到小的执行**
 
-\1. id相同时，执行顺序由上至下
+1. id相同时，执行顺序由上至下
 
-\2. 如果是子查询，id的序号会递增，id值越大优先级越高，越先被执行
+2. 如果是子查询，id的序号会递增，id值越大优先级越高，越先被执行
 
-\3. id如果相同，可以认为是一组，从上往下顺序执行；在所有组中，id值越大，优先级越高，越先执行
+3. id如果相同，可以认为是一组，从上往下顺序执行；在所有组中，id值越大，优先级越高，越先执行
 
 ```
 -- 查看在研发部并且名字以Jef开头的员工，经典查询
@@ -592,21 +421,35 @@ explain select e.no, e.name from emp e left join dept d on e.dept_no = d.no wher
 
 对表访问方式，表示MySQL在表中找到所需行的方式，又称“访问类型”。
 
-常用的类型有： **ALL、index、range、 ref、eq_ref、const、system、****NULL（从左到右，性能从差到好）**
+**常用的类型有**： ALL、index、range、 ref、eq_ref、const、system、NULL（从左到右，性能从差到好）
 
-ALL：Full Table Scan， MySQL将遍历全表以找到匹配的行
+#### ALL
 
-index: Full Index Scan，index与ALL区别为index类型只遍历索引树
+Full Table Scan， MySQL将遍历全表以找到匹配的行
 
-range:只检索给定范围的行，使用一个索引来选择行
+#### index
 
-ref: 表示上述表的连接匹配条件，即哪些列或常量被用于查找索引列上的值
+ Full Index Scan，index与ALL区别为index类型只遍历索引树
 
-eq_ref: 类似ref，区别就在使用的索引是唯一索引，对于每个索引键值，表中只有一条记录匹配，简单来说，就是多表连接中使用primary key或者 unique key作为关联条件
+#### range
 
-const、system: 当MySQL对查询某部分进行优化，并转换为一个常量时，使用这些类型访问。如将主键置于where列表中，MySQL就能将该查询转换为一个常量，system是const类型的特例，当查询的表只有一行的情况下，使用system
+只检索给定范围的行，使用一个索引来选择行
 
-NULL: MySQL在优化过程中分解语句，执行时甚至不用访问表或索引，例如从一个索引列里选取最小值可以通过单独索引查找完成。
+#### ref
+
+表示上述表的连接匹配条件，即哪些列或常量被用于查找索引列上的值
+
+#### eq_ref
+
+类似ref，区别就在使用的索引是唯一索引，对于每个索引键值，表中只有一条记录匹配，简单来说，就是多表连接中使用primary key或者 unique key作为关联条件
+
+#### const、system
+
+当MySQL对查询某部分进行优化，并转换为一个常量时，使用这些类型访问。如将主键置于where列表中，MySQL就能将该查询转换为一个常量，system是const类型的特例，当查询的表只有一行的情况下，使用system
+
+#### NULL
+
+MySQL在优化过程中分解语句，执行时甚至不用访问表或索引，例如从一个索引列里选取最小值可以通过单独索引查找完成。
 
  
 
@@ -673,6 +516,188 @@ No tables used：Query语句中使用from dual 或不含任何from子句
 ```
 -- explain select now() from dual;
 ```
+
+## SQL语句优化举例
+
+#### 1.where、order by 列上建立索引
+
+对查询进行优化，应尽量避免全表扫描，首先应考虑在 where 及 order by 涉及的列上建立索引。
+
+#### 2.避免在 where 中使用!=或<>操作符
+
+应尽量避免在 where 子句中使用!=或<>操作符，否则将引擎放弃使用索引而进行全表扫描。
+
+#### 3.避免在 where 中进行 null 值判断
+
+应尽量避免在 where 子句中对字段进行 null 值判断，否则将导致引擎放弃使用索引而进行全表扫描，如：
+
+select id from t where num is null
+
+可以在num上设置默认值0，确保表中num列没有null值，然后这样查询：
+
+select id from t where num=0
+
+#### 4.避免在 where 中使用 or
+
+应尽量避免在 where 子句中使用 or 来连接条件，否则将导致引擎放弃使用索引而进行全表扫描，如：
+
+select id from t where num=10 or num=20
+
+可以这样查询：
+
+select id from t where num=10
+
+union all
+
+select id from t where num=20
+
+#### 5.like注意事项
+
+下面的查询也将导致全表扫描：
+
+select id from t where name like '%abc%'
+
+若要提高效率，可以考虑全文检索。
+
+#### 6.慎用in 和 not in
+
+in 和 not in 也要慎用，否则会导致全表扫描，如：
+
+select id from t where num in(1,2,3)
+
+对于连续的数值，能用 between 就不要用 in 了：
+
+select id from t where num between 1 and 3
+
+#### 7.避免在where 中使用参数
+
+如果在 where 子句中使用参数，也会导致全表扫描。因为SQL只有在运行时才会解析局部变量，但优化程序不能将访问计划的选择推迟到运行时；它必须在编译时进行选择。然而，如果在编译时建立访问计划，变量的值还是未知的，因而无法作为索引选择的输入项。如下面语句将进行全表扫描：
+
+select id from t where num=@num
+
+可以改为强制查询使用索引：
+
+select id from t with(index(索引名)) where num=@num
+
+#### 8.避免在 where 中写表达式
+
+应尽量避免在 where 子句中对字段进行表达式操作，这将导致引擎放弃使用索引而进行全表扫描。如：
+
+select id from t where num/2=100
+
+应改为:
+
+select id from t where num=100*2
+
+#### 9.避免在where中对使用函数
+
+应尽量避免在where子句中对字段进行函数操作，这将导致引擎放弃使用索引而进行全表扫描。如：
+
+select id from t where substring(name,1,3)='abc'--name以abc开头的id
+
+select id from t where datediff(day,createdate,'2005-11-30')=0--'2005-11-30'生成的id
+
+应改为:
+
+select id from t where name like 'abc%'
+
+select id from t where createdate>='2005-11-30' and createdate<'2005-12-1'
+
+#### 10.NULL
+
+不要在 where 子句中的“=”左边进行函数、算术运算或其他表达式运算，否则系统将可能无法正确使用索引。
+
+#### 11.复合索引最左匹配原则
+
+在使用索引字段作为条件时，如果该索引是复合索引，那么必须使用到该索引中的第一个字段作为条件时才能保证系统使用该索引，否则该索引将不会被使用，并且应尽可能的让字段顺序与索引顺序相一致。
+
+#### 12.不要写一些没有意义的查询
+
+不要写一些没有意义的查询，如需要生成一个空表结构：
+
+select col1,col2 into #t from t where 1=0
+
+这类代码不会返回任何结果集，但是会消耗系统资源的，应改成这样：
+
+create table #t(...)
+
+#### 13.用 exists 代替 in
+
+很多时候用 exists 代替 in 是一个好的选择：
+
+select num from a where num in(select num from b)
+
+用下面的语句替换：
+
+select num from a where exists(select 1 from b where num=a.num)
+
+#### 14.索引列中不能有大量数据重复
+
+并不是所有索引对查询都有效，SQL是根据表中数据来进行查询优化的，当索引列有大量数据重复时，SQL查询可能不会去利用索引，如一表中有字段sex，male、female几乎各一半，那么即使在sex上建了索引也对查询效率起不了作用。
+
+#### 15.索引降低 insert 、 update 的效率
+
+索引并不是越多越好，索引固然可以提高相应的 select 的效率，但同时也降低了 insert 及 update 的效率，因为 insert 或 update 时有可能会重建索引，所以怎系统配置的优化样建索引需要慎重考虑，视具体情况而定。一个表的索引数最好不要超过6个，若太多则应考虑一些不常使用到的列上建的索引是否有必要。
+
+#### 16.避免更新 clustered 索引数据列
+
+应尽可能的避免更新 clustered 索引数据列，因为 clustered 索引数据列的顺序就是表记录的物理存储顺序，一旦该列值改变将导致整个表记录的顺序的调整，会耗费相当大的资源。若应用系统需要频繁更新 clustered 索引数据列，那么需要考虑是否应将该索引建为 clustered 索引。
+
+#### 17.尽量使用数字型字段
+
+尽量使用数字型字段，若只含数值信息的字段尽量不要设计为字符型，这会降低查询和连接的性能，并会增加存储开销。这是因为引擎在处理查询和连接时会逐个比较字符串中每一个字符，而对于数字型而言只需要比较一次就够了。
+
+#### 18.尽可能的使用 varchar/nvarchar 代替 char/nchar 
+
+尽可能的使用 varchar/nvarchar 代替 char/nchar ，因为首先变长字段存储空间小，可以节省存储空间，其次对于查询来说，在一个相对较小的字段内搜索效率显然要高些。
+
+#### 19.用具体的字段列表代替“*”
+
+任何地方都不要使用 select * from t ，用具体的字段列表代替“*”，不要返回用不到的任何字段。
+
+#### 20.使用表变量来代替临时表
+
+尽量使用表变量来代替临时表。如果表变量包含大量数据，请注意索引非常有限（只有主键索引）。
+
+#### 21.避免频繁创建和删除临时表
+
+避免频繁创建和删除临时表，以减少系统表资源的消耗。
+
+#### 22.NULL
+
+临时表并不是不可使用，适当地使用它们可以使某些例程更有效，例如，当需要重复引用大型表或常用表中的某个数据集时。但是，对于一次性事件，最好使用导出表。
+
+#### 23.NULL
+
+在新建**临时表**时，如果一次性插入数据量很大，那么可以使用 select into 代替 create table，避免造成大量 log ，以提高速度；如果数据量不大，为了缓和系统表的资源，应先create table，然后insert。
+
+#### 24.NULL
+
+如果使用到了临时表，在存储过程的最后务必将所有的临时表显式删除，先 truncate table ，然后 drop table ，这样可以避免系统表的较长时间锁定。系统配置的优化
+
+#### 25.避免使用游标
+
+尽量避免使用游标，因为游标的效率较差，如果游标操作的数据超过1万行，那么就应该考虑改写。
+
+#### 26.NULL
+
+使用基于游标的方法或临时表方法之前，应先寻找基于集的解决方案来解决问题，基于集的方法通常更有效。
+
+#### 27.NULL
+
+与临时表一样，游标并不是不可使用。对小型数据集使用 FAST_FORWARD 游标通常要优于其他逐行处理方法，尤其是在必须引用几个表才能获得所需的数据时。在结果集中包括“合计”的例程通常要比使用游标执行的速度快。如果开发时间允许，基于游标的方法和基于集的方法都可以尝试一下，看哪一种方法的效果更好。
+
+#### 28.NULL
+
+在所有的存储过程和触发器的开始处设置 SET NOCOUNT ON ，在结束时设置 SET NOCOUNT OFF 。无需在执行存储过程和触发器的每个语句后向客户端发送 DONE_IN_PROC 消息。
+
+#### 29.避免向客户端返回大数据量
+
+尽量避免向客户端返回大数据量，若数据量过大，应该考虑相应需求是否合理。
+
+#### 30.避免大事务操作
+
+尽量避免大事务操作，提高系统并发能力。
 
 ## ！！分区表
 
