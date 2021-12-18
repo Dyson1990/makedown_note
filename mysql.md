@@ -8,6 +8,71 @@
 4. 检查表中数据是否过多，是否应该进行分库分表了
 5. 检查数据库实例所在机器的性能配置，是否太低，是否可以适当增加资源
 
+# MySQL理论
+
+## MySQL整体逻辑架构
+
+![Center](https://img-blog.csdn.net/20150514221010295?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvY3ltbV9saXU=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)
+
+**第一层，即最上一层**，所包含的服务并不是MySQL所独有的技术。它们都是服务于C/S程序或者是这些程序所需要的 ：连接处理，身份验证，安全性等等。
+
+**第二层值得关注**。这是MySQL的核心部分。通常叫做 SQL Layer。在  MySQL据库系统处理底层数据之前的所有工作都是在这一层完成的，包括权限判断， sql解析，行计划优化， query cache  的处理以及所有内置的函数(如日期,时间,数学运算,加密)等等。各个存储引擎提供的功能都集中在这一层，如存储过程，触发器，视 图等。
+
+**第三层包括了存储引擎**。通常叫做StorEngine Layer  ，也就是底层数据存取操作实现部分，由多种存储引擎共同组成。它们负责存储和获取所有存储在MySQL中的数据。就像Linux众多的文件系统  一样。每个存储引擎都有自己的优点和缺陷。服务器是通过存储引擎API来与它们交互的。这个接口隐藏  了各个存储引擎不同的地方。对于查询层尽可能的透明。这个API包含了很多底层的操作。如开始一个事  物，或者取出有特定主键的行。存储引擎不能解析SQL，互相之间也不能通信。仅仅是简单的响应服务器 的请求。
+
+## mysql逻辑分层
+
+client  ==>连接层 ==>服务层==>引擎层==>存储层 server
+
+| 名称   |                                                              |
+| ------ | ------------------------------------------------------------ |
+| client | 提供与客户端连接的服务                                       |
+| 连接层 | 1.提供各种用户使用的接口(增删改查),sql解析<br/>	sql的解析过程比如:<br/>	from ... on ... where ... group by  ... having ... select ... order by ... limit<br/>2.提供SQL优化器(MySQL Query Optimizer),重写查询,决定表的读取顺序,选择合适的索引<br/>	mysql的hint关键字有很多比如:SQL_NO_CACHE FORCE_INDEX SQL_BUFFER_RESULT |
+| 服务层 |                                                              |
+|        |                                                              |
+|        |                                                              |
+
+
+
+### 连接层
+
+​	提供与客户端连接的服务
+
+### 服务层
+
+1.提供各种用户使用的接口(增删改查),sql解析
+	sql的解析过程比如:
+	from ... on ... where ... group by  ... having ... select ... order by ... limit
+2.提供SQL优化器(MySQL Query Optimizer),重写查询,决定表的读取顺序,选择合适的索引
+	mysql的hint关键字有很多比如:SQL_NO_CACHE FORCE_INDEX SQL_BUFFER_RESULT
+
+### 引擎层
+
+innoDB和MyISAM
+
+innoDB:事务优先(适合高并发修改操作;行锁)
+MyISAM:读性能优先
+
+show engines;查询支持哪些引擎
+查看当前默认的引擎 show variables like '%storage_engine%';default_storage_engine
+
+## B树与B+树
+
+### B树
+
+每个节点都存储key和data，所有节点组成这棵树，并且叶子节点指针为null。
+
+![](https://img-blog.csdnimg.cn/20190705082348947.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3podXlhbmxpbjA5,size_16,color_FFFFFF,t_70)
+
+### B+树
+
+只有叶子节点存储data，叶子节点包含了这棵树的所有键值，叶子节点不存储指针。
+
+![](https://img-blog.csdnimg.cn/20190705082430929.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3podXlhbmxpbjA5,size_16,color_FFFFFF,t_70)
+
+后来，在B+树上增加了顺序访问指针，也就是每个叶子节点增加一个指向相邻叶子节点的指针，这样一棵树成了数据库系统实现索引的首选数据结构。 
+
+
 # MySQL函数
 
 ## 序号函数
