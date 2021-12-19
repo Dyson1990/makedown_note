@@ -1,5 +1,7 @@
 # 待分类
 
+## ！！MySQL 哪些情况会锁表
+
 ## MySQL慢查询该如何优化
 
 1. 检查是否走了索引，如果没有则优化SQL利用索引
@@ -95,37 +97,13 @@ MySQL5.5版本开始Innodb已经成为Mysql的默认引擎(之前是MyISAM)，�
 
 client  ==>连接层 ==>服务层==>引擎层==>存储层 server
 
-| 名称   |                                                              |
+| 名称   | 注释                                                         |
 | ------ | ------------------------------------------------------------ |
-| client | 提供与客户端连接的服务                                       |
-| 连接层 | 1.提供各种用户使用的接口(增删改查),sql解析<br/>	sql的解析过程比如:<br/>	from ... on ... where ... group by  ... having ... select ... order by ... limit<br/>2.提供SQL优化器(MySQL Query Optimizer),重写查询,决定表的读取顺序,选择合适的索引<br/>	mysql的hint关键字有很多比如:SQL_NO_CACHE FORCE_INDEX SQL_BUFFER_RESULT |
-| 服务层 |                                                              |
-|        |                                                              |
-|        |                                                              |
-
-
-
-### 连接层
-
-​	提供与客户端连接的服务
-
-### 服务层
-
-1.提供各种用户使用的接口(增删改查),sql解析
-	sql的解析过程比如:
-	from ... on ... where ... group by  ... having ... select ... order by ... limit
-2.提供SQL优化器(MySQL Query Optimizer),重写查询,决定表的读取顺序,选择合适的索引
-	mysql的hint关键字有很多比如:SQL_NO_CACHE FORCE_INDEX SQL_BUFFER_RESULT
-
-### 引擎层
-
-innoDB和MyISAM
-
-innoDB:事务优先(适合高并发修改操作;行锁)
-MyISAM:读性能优先
-
-show engines;查询支持哪些引擎
-查看当前默认的引擎 show variables like '%storage_engine%';default_storage_engine
+| client |                                                              |
+| 连接层 | 提供与客户端连接的服务                                       |
+| 服务层 | 1.提供各种用户使用的接口(增删改查),sql解析<br/>	sql的解析过程比如:<br/>	from ... on ... where ... group by  ... having ... select ... order by ... limit<br/>2.提供SQL优化器(MySQL Query Optimizer),重写查询,决定表的读取顺序,选择合适的索引<br/>	mysql的hint关键字有很多比如:SQL_NO_CACHE FORCE_INDEX SQL_BUFFER_RESULT |
+| 引擎层 | innoDB和MyISAM<br/>innoDB:事务优先(适合高并发修改操作;行锁)<br/><br/>MyISAM:读性能优先<br/>show engines;查询支持哪些引擎<br/><br/>查看当前默认的引擎 show variables like '%storage_engine%';default_storage_engine |
+| 存储层 |                                                              |
 
 ## B树与B+树
 
@@ -197,8 +175,6 @@ show engines;查询支持哪些引擎
 2. 数据库表结构的优化
 3. 系统配置的优化
 4. 硬件的优化
-
-## ！！最左前缀原则
 
 ## Mysql语句执行顺序
 
