@@ -87,6 +87,8 @@ MySQL5.5版本开始Innodb已经成为Mysql的默认引擎(之前是MyISAM)，�
 
 ![Center](https://img-blog.csdn.net/20150514221010295?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvY3ltbV9saXU=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)
 
+![](./img/2021-12-20_09-50.png)
+
 **第一层，即最上一层**，所包含的服务并不是MySQL所独有的技术。它们都是服务于C/S程序或者是这些程序所需要的 ：连接处理，身份验证，安全性等等。
 
 **第二层值得关注**。这是MySQL的核心部分。通常叫做 SQL Layer。在  MySQL据库系统处理底层数据之前的所有工作都是在这一层完成的，包括权限判断， sql解析，行计划优化， query cache  的处理以及所有内置的函数(如日期,时间,数学运算,加密)等等。各个存储引擎提供的功能都集中在这一层，如存储过程，触发器，视 图等。
@@ -193,7 +195,7 @@ client  ==>连接层 ==>服务层==>引擎层==>存储层 server
 
 存在如下表格orders：
 
-![img](https://img-blog.csdn.net/20160426201000609?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)
+![img](./img/Center)
 
 注：下面所有语句符合语法顺序(也不可能不符合，因为会报错^_^)，只分析其执行顺序：(join和on属于多表查询，放在最后展示)
 
@@ -211,7 +213,7 @@ where a.Customer='Bush' or a.Customer = 'Adams'
 
 
 
-![img](https://img-blog.csdn.net/20160426202039734?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)
+![img](./img/2Center)
 
 #### 语句二groupby
 
@@ -230,7 +232,7 @@ group by a.Customer
 ```
 
 分析二：在from，where执行后，执行group by，同时也根据group by的字段，执行sum这个聚合函数。这样的话得到的记录对group by的字段来说是不重复的，结果如下：
-![img](https://img-blog.csdn.net/20160426204606386?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)
+![img](./img/9Center)
 
  
 
@@ -254,7 +256,7 @@ having sum(a.OrderPrice) > 2000
 
  
 
-![img](https://img-blog.csdn.net/20160426210308639?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)
+![img](./img/4Center)
 
 #### 语句四distinct
 
@@ -278,7 +280,7 @@ having sum(a.OrderPrice) > 1700
 
  
 
-![img](https://img-blog.csdn.net/20160426211335153?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)
+![img](./img/8Center)
 
 #### 语句五union
 
@@ -314,7 +316,7 @@ having sum(a.OrderPrice) > 2000
 
  
 
-![img](https://img-blog.csdn.net/20160426212147820?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)
+![img](./img/32Center)
 
 #### 语句六order by
 
@@ -352,7 +354,7 @@ order by order1
 
  
 
-![img](https://img-blog.csdn.net/20160426212608763?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)
+![img](./img/3Center)
 
 #### 语句七limit
 
@@ -390,7 +392,7 @@ limit 1
 
  
 
-![img](https://img-blog.csdn.net/20160426212749672?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)
+![img](./img/23Center)
 
 #### 语句八
 
