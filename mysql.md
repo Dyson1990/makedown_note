@@ -2,6 +2,62 @@
 
 ## ！！MySQL 哪些情况会锁表
 
+## 索引下推
+
+（index condition pushdown ）简称ICP，在**Mysql5.6**的版本上推出，用于优化查询。
+
+在不使用ICP的情况下，在使用**非主键索引（又叫普通索引或者二级索引）**进行查询时，存储引擎通过索引检索到数据，然后返回给MySQL服务器，服务器然后判断数据是否符合条件 。
+
+在使用ICP的情况下，如果存在某些被索引的列的判断条件时，MySQL服务器将这一部分判断条件传递给存储引擎，然后由存储引擎通过判断索引是否符合MySQL服务器传递的条件，只有当索引符合条件时才会将数据检索出来返回给MySQL服务器 。
+
+**索引条件下推优化可以减少存储引擎查询基础表的次数，也可以减少MySQL服务器从存储引擎接收数据的次数**。 
+
+### Mysql5.6之前的版本
+
+- 5.6之前的版本是没有索引下推这个优化的，因此执行的过程如下图：
+
+![img](./img/16401639821.png)
+
+会忽略age这个字段，直接通过name进行查询，在(name,age)这课树上查找到了两个结果，id分别为2,1，然后拿着取到的id值一次次的回表查询，因此这个过程需要**回表两次**。
+
+### Mysql5.6及之后版本
+
+- 5.6版本添加了索引下推这个优化，执行的过程如下图：
+
+![img](./img/16401639402.png)
+
+- InnoDB并没有忽略age这个字段，而是在索引内部就判断了age是否等于20，对于不等于20的记录直接跳过，因此在(name,age)这棵索引树中只匹配到了一个记录，此时拿着这个id去主键索引树中回表查询全部数据，这个过程只需要**回表一次**。
+
+## 索引优化的时候需要注意什么
+
+1.索引字段要尽可能少的占用存储空间
+
+2.在满足业务系统的需求内，尽可能自增
+
+3.索引字段尽可能不要为null
+
+4.选择索引的时候，索引内容的重复值要尽可能少（大于80%）
+
+5.只给常用字段添加索引
+
+6.尽量避免索引失效
+
+7.索引字段不要频繁修改
+
+
+
+##  mysql聚簇索引和非聚簇索引的区别
+
+#### **1) 聚集索引**
+
+表数据按照索引的顺序来存储的，也就是说索引项的顺序与表中记录的物理顺序一致。对于聚集索引，叶子结点即存储了真实的数据行，不再有另外单独的数据页。 在一张表上最多只能创建一个聚集索引，因为真实数据的物理顺序只能有一种。
+
+#### **2) 非聚集索引**
+
+表数据存储顺序与索引顺序无关。对于非聚集索引，叶结点包含索引字段值及指向数据页数据行的逻辑指针，其行数量与数据表行数据量一致。
+
+总结一下：聚集索引是一种稀疏索引，数据页上一级的索引页存储的是页指针，而不是行指针。而对于非聚集索引，则是密集索引，在数据页的上一级索引页它为每一个数据行存储一条索引记录。
+
 ## MySQL慢查询该如何优化
 
 1. 检查是否走了索引，如果没有则优化SQL利用索引
@@ -11,6 +67,8 @@
 5. 检查数据库实例所在机器的性能配置，是否太低，是否可以适当增加资源
 
 ## 为什么用自增列作为主键
+
+**在满足业务系统的情况下，尽可能选择自增**
 
 1、如果我们定义了主键(PRIMARY KEY)，那么InnoDB会选择主键作为聚集索引。
 
@@ -87,17 +145,17 @@ MySQL5.5版本开始Innodb已经成为Mysql的默认引擎(之前是MyISAM)，�
 
 ![Center](https://img-blog.csdn.net/20150514221010295?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvY3ltbV9saXU=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)
 
-![](./img/2021-12-20_09-50.png)
-
 **第一层，即最上一层**，所包含的服务并不是MySQL所独有的技术。它们都是服务于C/S程序或者是这些程序所需要的 ：连接处理，身份验证，安全性等等。
 
 **第二层值得关注**。这是MySQL的核心部分。通常叫做 SQL Layer。在  MySQL据库系统处理底层数据之前的所有工作都是在这一层完成的，包括权限判断， sql解析，行计划优化， query cache  的处理以及所有内置的函数(如日期,时间,数学运算,加密)等等。各个存储引擎提供的功能都集中在这一层，如存储过程，触发器，视 图等。
 
-**第三层包括了存储引擎**。通常叫做StorEngine Layer  ，也就是底层数据存取操作实现部分，由多种存储引擎共同组成。它们负责存储和获取所有存储在MySQL中的数据。就像Linux众多的文件系统  一样。每个存储引擎都有自己的优点和缺陷。服务器是通过存储引擎API来与它们交互的。这个接口隐藏  了各个存储引擎不同的地方。对于查询层尽可能的透明。这个API包含了很多底层的操作。如开始一个事  物，或者取出有特定主键的行。存储引擎不能解析SQL，互相之间也不能通信。仅仅是简单的响应服务器 的请求。
+**第三层包括了存储引擎**。通常叫做StorEngine Layer  ，也就是底层数据存取操作实现部分，由多种存储引擎共同组成。它们负责存储和获取所有存储在MySQL中的数据。就像Linux众多的文件系统  一样。每个存储引擎都有自己的优点和缺陷。服务器是通过存储引擎API来与它们交互的。这个接口隐藏  了各个存储引擎不同的地方。对于查询层尽可能的透明。这个API包含了很多底层的操作。如开始一个事物，或者取出有特定主键的行。存储引擎不能解析SQL，互相之间也不能通信。仅仅是简单的响应服务器 的请求。
 
 ## mysql逻辑分层
 
 client  ==>连接层 ==>服务层==>引擎层==>存储层 server
+
+![](./img/2021-12-20_09-50.png)
 
 | 名称   | 注释                                                         |
 | ------ | ------------------------------------------------------------ |
@@ -117,11 +175,15 @@ client  ==>连接层 ==>服务层==>引擎层==>存储层 server
 
 ### B+树
 
-只有叶子节点存储data，叶子节点包含了这棵树的所有键值，叶子节点不存储指针。
+**只有叶子节点存储data**，叶子节点包含了这棵树的**所有键值**，叶子节点不存储指针。
 
 ![](https://img-blog.csdnimg.cn/20190705082430929.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3podXlhbmxpbjA5,size_16,color_FFFFFF,t_70)
 
-后来，在B+树上增加了顺序访问指针，也就是每个叶子节点增加一个指向相邻叶子节点的指针，这样一棵树成了数据库系统实现索引的首选数据结构。 
+后来，在B+树上增加了**顺序访问指针**，也就是每个叶子节点增加一个指向相邻叶子节点的指针，这样一棵树成了数据库系统实现索引的首选数据结构。
+
+存储数据量：假设一个key占10个字节，可以存入4千万+。
+
+一般情况下，3-4层的B+树支持千万级别索引。
 
 
 # MySQL函数
@@ -140,9 +202,9 @@ client  ==>连接层 ==>服务层==>引擎层==>存储层 server
 
 顺序排序，不跳过任何一个序号，就是**行号**
 
-> `select` 
->     `id,` 
->     `name,` 
+> `select`
+>     `id,`
+>     `name,`
 >     `rank() over(order by score desc) rank,`
 >     `row_number() over(order by score desc) row_number,`
 >     `dense_rank() over(order by score desc) dense_rank`
@@ -180,16 +242,16 @@ client  ==>连接层 ==>服务层==>引擎层==>存储层 server
 
 ## Mysql语句执行顺序
 
-1. from 
-2. on 
-3. join 
-4. where 
-5. group by 
-6. having 
-7. select 
-8. distinct 
-9. union 
-10. order by 
+1. from
+2. on
+3. join
+4. where
+5. group by
+6. having
+7. select
+8. distinct
+9. union
+10. order by
 
 ### 案例
 
@@ -202,11 +264,11 @@ client  ==>连接层 ==>服务层==>引擎层==>存储层 server
 #### 语句一
 
 ```
-select a.Customer 
+select a.Customer
 
-from orders a 
+from orders a
 
-where a.Customer='Bush' or a.Customer = 'Adams' 
+where a.Customer='Bush' or a.Customer = 'Adams'
 ```
 
 分析一：首先是from语句找到表格，然后根据where得到符合条件的记录，最后select出需要的字段，结果如下：
@@ -219,42 +281,42 @@ where a.Customer='Bush' or a.Customer = 'Adams'
 
 groupby要和聚合函数一起使用
 
- 
+
 
 ```
-select a.Customer,sum(a.OrderPrice) 
+select a.Customer,sum(a.OrderPrice)
 
-from orders a 
+from orders a
 
-where a.Customer='Bush' or a.Customer = 'Adams' 
+where a.Customer='Bush' or a.Customer = 'Adams'
 
-group by a.Customer 
+group by a.Customer
 ```
 
 分析二：在from，where执行后，执行group by，同时也根据group by的字段，执行sum这个聚合函数。这样的话得到的记录对group by的字段来说是不重复的，结果如下：
 ![img](./img/9Center)
 
- 
+
 
 #### 语句三having
 
- 
+
 
 ```
-select a.Customer,sum(a.OrderPrice) 
+select a.Customer,sum(a.OrderPrice)
 
-from orders a 
+from orders a
 
-where a.Customer='Bush' or a.Customer = 'Adams' 
+where a.Customer='Bush' or a.Customer = 'Adams'
 
-group by a.Customer 
+group by a.Customer
 
-having sum(a.OrderPrice) > 2000 
+having sum(a.OrderPrice) > 2000
 ```
 
 分析三：由于where是在group之前执行，那么如何对group by的结果进行筛选，就用到了having，结果如下：
 
- 
+
 
 ![img](./img/4Center)
 
@@ -262,23 +324,23 @@ having sum(a.OrderPrice) > 2000
 
 （为测试，先把数据库中Adams那条记录的OrderPrice改为3000）
 
- 
+
 
 ```
-select distinct sum(a.OrderPrice) 
+select distinct sum(a.OrderPrice)
 
-from orders a 
+from orders a
 
-where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter' 
+where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter'
 
-group by a.Customer 
+group by a.Customer
 
-having sum(a.OrderPrice) > 1700 
+having sum(a.OrderPrice) > 1700
 ```
 
 分析四：将得到一条记录（没有distinct，将会是两条同样的记录）：
 
- 
+
 
 ![img](./img/8Center)
 
@@ -286,73 +348,73 @@ having sum(a.OrderPrice) > 1700
 
 完全是对select的结果进行合并（默认去掉重复的记录）：
 
- 
+
 
 ```
-select distinct sum(a.OrderPrice) As Order1 
+select distinct sum(a.OrderPrice) As Order1
 
-from orders a 
+from orders a
 
-where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter' 
+where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter'
 
-group by a.Customer 
+group by a.Customer
 
-having sum(a.OrderPrice) > 1500 
+having sum(a.OrderPrice) > 1500
 
-union 
+union
 
-select distinct sum(a.OrderPrice) As Order1 
+select distinct sum(a.OrderPrice) As Order1
 
-from orders a 
+from orders a
 
-where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter' 
+where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter'
 
-group by a.Customer 
+group by a.Customer
 
-having sum(a.OrderPrice) > 2000 
+having sum(a.OrderPrice) > 2000
 ```
 
-分析五：默认去掉重复记录（想保留重复记录使用union all），结果如下：
+分Ubuntu 添加打印机析五：默认去掉重复记录（想保留重复记录使用union all），结果如下：
 
- 
+
 
 ![img](./img/32Center)
 
 #### 语句六order by
 
- 
+
 
 ```
-select distinct sum(a.OrderPrice) As order1 
+select distinct sum(a.OrderPrice) As order1
 
-from orders a 
+from orders a
 
-where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter' 
+where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter'
 
-group by a.Customer 
+group by a.Customer
 
-having sum(a.OrderPrice) > 1500 
+having sum(a.OrderPrice) > 1500
 
-union 
+union
 
-select distinct sum(a.OrderPrice) As order1 
+select distinct sum(a.OrderPrice) As order1
 
-from orders a 
+from orders a
 
-where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter' 
+where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter'
 
-group by a.Customer 
+group by a.Customer
 
-having sum(a.OrderPrice) > 2000 
+having sum(a.OrderPrice) > 2000
 
-order by order1 
+order by order1
 
 
 ```
 
 分析：升序排序，结果如下：
 
- 
+
 
 ![img](./img/3Center)
 
@@ -361,36 +423,36 @@ order by order1
 
 
 ```
-select distinct sum(a.OrderPrice) As order1 
+select distinct sum(a.OrderPrice) As order1
 
-from orders a 
+from orders a
 
-where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter' 
+where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter'
 
-group by a.Customer 
+group by a.Customer
 
-having sum(a.OrderPrice) > 1500 
+having sum(a.OrderPrice) > 1500
 
-union 
+union
 
-select distinct sum(a.OrderPrice) As order1 
+select distinct sum(a.OrderPrice) As order1
 
-from orders a 
+from orders a
 
-where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter' 
+where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter'
 
-group by a.Customer 
+group by a.Customer
 
-having sum(a.OrderPrice) > 2000 
+having sum(a.OrderPrice) > 2000
 
-order by order1 
+order by order1
 
-limit 1 
+limit 1
 ```
 
 分析七：取出结果中的前1条记录，结果如下：
 
- 
+
 
 ![img](./img/23Center)
 
@@ -399,39 +461,39 @@ limit 1
 （上面基本讲完，下面是join 和 on)
 
 `
-select distinct sum(a.OrderPrice) As order1,sum(d.OrderPrice) As order2 
+select distinct sum(a.OrderPrice) As order1,sum(d.OrderPrice) As order2
 
-from orders a 
+from orders a
 
 left join (select c.* from Orders c) d  
 
-on a.O_Id = d.O_Id 
+on a.O_Id = d.O_Id
 
-where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter' 
+where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter'
 
-group by a.Customer 
+group by a.Customer
 
-having sum(a.OrderPrice) > 1500 
+having sum(a.OrderPrice) > 1500
 
-union 
+union
 
-select distinct sum(a.OrderPrice) As order1,sum(e.OrderPrice) As order2 
+select distinct sum(a.OrderPrice) As order1,sum(e.OrderPrice) As order2
 
-from orders a 
+from orders a
 
 left join (select c.* from Orders c) e  
 
-on a.O_Id = e.O_Id 
+on a.O_Id = e.O_Id
 
-where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter' 
+where a.Customer='Bush' or a.Customer = 'Adams' or a.Customer = 'Carter'
 
-group by a.Customer 
+group by a.Customer
 
-having sum(a.OrderPrice) > 2000 
+having sum(a.OrderPrice) > 2000
 
-order by order1 
+order by order1
 
-limit 1 
+limit 1
 `
 
 分析八：上述语句其实join on就是多连接了一张表，而且是两张一样的表，都是Orders。 执行过程是，在执行from关键字之后根据on指定的条件，把left join指定的表格数据附在from指定的表格后面，然后再执行where字句。
@@ -463,20 +525,20 @@ expain出来的信息有10列，分别是id、select_type、table、type、possi
 
 **概要描述：**
 
-| explain中的列名 | 解释                       |
-| --------------- | -------------------------- |
-| id              | 表示查询的类型             |
-| select_type     | 表示查询的类型             |
-| table           | 输出结果集的表             |
-| partitions      | 匹配的分区                 |
-| type            | 表示表的连接类型           |
-| possible_keys   | 表示查询时，可能使用的索引 |
-| key             | 表示实际使用的索引         |
-| key_len         | 索引字段的长度             |
-| ref             | 列与索引的比较             |
-| rows            | 扫描出的行数(估算的行数)   |
-| filtered        | 按表条件过滤的行百分比     |
-| Extra           | 执行情况的描述和说明       |
+| explain中的列名 | 解释                     |
+| --------------- | ------------------------ |
+| id              | 选择标识符               |
+| select_type     | 查询的类型               |
+| table           | 输出结果集的表           |
+| partitions      | 匹配的分区               |
+| type            | 表的连接类型             |
+| possible_keys   | 查询时，可能使用的索引   |
+| key             | 实际使用的索引           |
+| key_len         | 索引字段的长度           |
+| ref             | 列与索引的比较           |
+| rows            | 扫描出的行数(估算的行数) |
+| filtered        | 按表条件过滤的行百分比   |
+| Extra           | 执行情况的描述和说明     |
 
 **下面对这些字段出现的可能进行解释：**
 
@@ -499,7 +561,7 @@ explain select e.no, e.name from emp e left join dept d on e.dept_no = d.no wher
 
 ![img](./img/512541-20180803143413064-173136748.png)
 
- 
+
 
 ### **二、select_type**
 
@@ -523,13 +585,13 @@ explain select e.no, e.name from emp e left join dept d on e.dept_no = d.no wher
 
 (9) UNCACHEABLE SUBQUERY(一个子查询的结果不能被缓存，必须重新评估外链接的第一行)
 
- 
+
 
 ### **三、table**
 
 显示这一步所访问数据库中表名称（显示这一行的数据是关于哪张表的），有时不是真实的表名字，可能是简称，例如上面的e，d，也可能是第几步执行的结果的简称
 
- 
+
 
 ### **四、type**
 
@@ -565,7 +627,7 @@ Full Table Scan， MySQL将遍历全表以找到匹配的行
 
 MySQL在优化过程中分解语句，执行时甚至不用访问表或索引，例如从一个索引列里选取最小值可以通过单独索引查找完成。
 
- 
+
 
 ### **五、possible_keys**
 
@@ -574,7 +636,7 @@ MySQL在优化过程中分解语句，执行时甚至不用访问表或索引，
 该列完全独立于EXPLAIN输出所示的表的次序。这意味着在possible_keys中的某些键实际上不能按生成的表次序使用。
 如果该列是NULL，则没有相关的索引。在这种情况下，可以通过检查WHERE子句看是否它引用某些列或适合索引的列来提高你的查询性能。如果是这样，创造一个适当的索引并且再次用EXPLAIN检查查询
 
- 
+
 
 ### **六、Key**
 
@@ -582,27 +644,27 @@ key列显示MySQL实际决定使用的键（索引），必然包含在possible_
 
 如果没有选择索引，键是NULL。要想强制MySQL使用或忽视possible_keys列中的索引，在查询中使用FORCE INDEX、USE INDEX或者IGNORE INDEX。
 
- 
+
 
 ### **七、key_len**
 
 表示索引中使用的字节数，可通过该列计算查询中使用的索引的长度（key_len显示的值为索引字段的最大可能长度，并非实际使用长度，即key_len是根据表定义计算而得，不是通过表内检索出的）
 
-不损失精确性的情况下，长度越短越好 
+不损失精确性的情况下，长度越短越好
 
- 
+
 
 ### **八、ref**
 
 列与索引的比较，表示上述表的连接匹配条件，即哪些列或常量被用于查找索引列上的值
 
- 
+
 
 ### **九、rows**
 
  估算出结果集行数，表示MySQL根据表统计信息及索引选用情况，估算的找到所需的记录所需要读取的行数
 
- 
+
 
 ### **十、Extra**
 
@@ -761,7 +823,7 @@ select num from a where exists(select 1 from b where num=a.num)
 
 尽量使用数字型字段，若只含数值信息的字段尽量不要设计为字符型，这会降低查询和连接的性能，并会增加存储开销。这是因为引擎在处理查询和连接时会逐个比较字符串中每一个字符，而对于数字型而言只需要比较一次就够了。
 
-#### 18.尽可能的使用 varchar/nvarchar 代替 char/nchar 
+#### 18.尽可能的使用 varchar/nvarchar 代替 char/nchar
 
 尽可能的使用 varchar/nvarchar 代替 char/nchar ，因为首先变长字段存储空间小，可以节省存储空间，其次对于查询来说，在一个相对较小的字段内搜索效率显然要高些。
 
@@ -858,4 +920,3 @@ select num from a where exists(select 1 from b where num=a.num)
 
 
 ## ！！读写分离
-
