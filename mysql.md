@@ -875,7 +875,9 @@ select num from a where exists(select 1 from b where num=a.num)
 
 尽量避免大事务操作，提高系统并发能力。
 
-## 分区表
+## 分区分表
+
+**推荐sharingsphere**
 
 ### 表分区有什么好处
 
@@ -917,6 +919,50 @@ select num from a where exists(select 1 from b where num=a.num)
 1. **快照读 (snapshot read)**：读取的是记录的可见版本 (有可能是历史版本)，不用加锁（共享读锁s锁也不加，所以不会阻塞其他事务的写）
 2. **当前读 (current read)**：读取的是记录的最新版本，并且，当前读返回的记录，都会加上锁，保证其他事务不会再并发修改这条记录
 
+## 主从复制
 
+### 主（Master）从（Slave）复制的工作过程
 
-## ！！读写分离
+1） 在每个事务更新数据完成之前，master 在二进制日志记录这些改变。写入二进制日志完成后，master 通知存储引擎提交事务。
+
+2） Slave 将 master 的 binary log 复制到其中继日志。首先 slave 开始一个工作线程（I/O），I/O 线程在 master 上打开一个普通的连接，然后开始 binlog dump process。binlog dump process 从 master 的二进制日志中读取事件，如果已经跟上 master，它会睡眠并等待 master 产生新的事件，I/O 线程将这些事件写入中继日志。
+
+3） Sql slave thread（sql 从线程）处理该过程的最后一步，sql 线程从中继日志读取事件，并重放其中的事件而更新 slave 数据，使其与 master 中的数据一致，只要该线程与 I/O 线程保持一致，中继日志通常会位于 os 缓存中，所以中继日志的开销很小。
+
+![img](https://img-blog.csdnimg.cn/20200304161751676.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMzOTQ1MjQ2,size_16,color_FFFFFF,t_70)
+
+### 主从复制的几种方式
+
+    同步复制: master 的变化，必须等待 slave-1,slave-2,…,slave-n 完成后才能返回。 这样，显然不可取，也不是 MySQL 复制的默认设置。比如，在 WEB 前端页面上，用户增加了条记录，需要等待很长时间。
+    
+    异步复制:如同 AJAX 请求一样。master 只需要完成自己的数据库操作即可。至于 slaves 是否收到二进制日志，是否完成操作，不用关心，MySQL 的默认设置。
+    
+    半同步复制:master 只保证 slaves 中的一个操作成功，就返回，其他 slave 不管。 这个功能，是由 google 为 MySQL 引入的。
+
+随着应用的日益增长，读操作很多，我们可以扩展 slave，但是如果 master 满足不了写操作了，怎么办呢？
+
+可以分库【垂直拆分】，分表【水平拆分】。
+
+### ！！MTS
+
+## 读写分离
+
+**推荐sharingsphere**
+
+读写分离就是在主服务器上修改，数据会同步到从服务器，从服务器只能提供读取数据，不能写入，实现备份的同时也实现了数据库性能的优化，以及提升了服务器安全。
+
+在这里插入图片描述
+
+前较为常见的 Mysql 读写分离分为以下两种：
+
+### 基于程序代码内部实现
+
+在代码中根据 select 、insert 进行路由分类，这类方法也是目前生产环境下应用最广泛的。优点是性能较好，因为程序在代码中实现，不需要增加额外的硬件开支，缺点是需要开发人员来实现，运维人员无从下手。
+
+### 基于中间代理层实现
+
+代理一般介于应用服务器和数据库服务器之间，代理数据库服务器接收到应用服务器的请求后根据判断后转发到，后端数据库，有以下代表性的程序。
+
+    mysql_proxy。mysql_proxy 是 Mysql 的一个开源项目，通过其自带的 lua 脚本进行 sql 判断。
+
+不是所有的应用都能够在基于程序代码中实现读写分离，像一些大型的 java 应用，如果在程序代码中实现读写分离对代码的改动就较大，所以，像这种应用一般会考虑使用代理层来实现。
